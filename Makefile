@@ -33,9 +33,9 @@ ICON     :=
 NITRO    :=
 
 # These set the information text in the nds file
-GAME_TITLE     := Advanced ARM9 template
-GAME_SUBTITLE1 := built with devkitARM
-GAME_SUBTITLE2 := http://devitpro.org
+GAME_TITLE     := Pong DS
+GAME_SUBTITLE1 := Ported from SNES
+GAME_SUBTITLE2 := Recompiled with Gilgamesh
 
 #---------------------------------------------------------------------------------
 # options for code generation
