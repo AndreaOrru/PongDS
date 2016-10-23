@@ -1,0 +1,10 @@
+-std=gnu++11
+
+-Wall
+-Wextra
+
+-DARM9
+
+-I/opt/devkitpro/libnds/include
+-I/opt/devkitpro/devkitARM/arm-none-eabi/include
+-I/opt/devkitpro/devkitARM/lib/gcc/arm-none-eabi/5.3.0/include

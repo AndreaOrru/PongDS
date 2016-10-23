@@ -27,3 +27,8 @@
 *.exe
 *.out
 *.app
+
+# Nintendo DS files
+build/
+*.elf
+*.nds
