@@ -13,6 +13,11 @@ uint8_t mem[0x20000];
 void snes_reset()
 {
 snes_reset:
+    // Initialize DS graphics mode:
+    videoSetMode(MODE_0_2D);
+    vramSetBankA(VRAM_A_MAIN_BG);
+    int bg = bgInit(0, BgType_Text4bpp, BgSize_T_256x256, 0, 1);
+
     /*** Initialize sprite attributes. ***/
     STZ_w(OAMADDL);
     LDX_imm_b(0x80);
@@ -29,6 +34,7 @@ loc_00800D:
 
     LDX_imm_b(0x20);
     LDA_imm_b(0x55);
+    /*************************************/
 
 loc_008024:
     STA_b(OAMDATA);
@@ -69,7 +75,7 @@ loc_008024:
     STA_b(MDMAEN);     // DMA: $0087A6 -> VRAM ($800 bytes)
 
     /*** Copy background tiles. ***/
-    LDA_imm_b(0x80);
+    /*LDA_imm_b(0x80);
     STA_b(VMAIN);
     LDX_imm_w(0x1000);
     STX_w(VMADDL);
@@ -82,7 +88,8 @@ loc_008024:
     LDX_imm_w(0x02c0);
     STX_w(DAS0);
     LDA_imm_b(0x01);
-    STA_b(MDMAEN);     // DMA: $0084E6 -> VRAM ($2C0 bytes)
+    STA_b(MDMAEN);     // DMA: $0084E6 -> VRAM ($2C0 bytes)*/
+    dmaCopy(tiles, bgGetGfxPtr(bg), sizeof(tiles));
 
     /*** Copy sprite tiles. ***/
     LDA_imm_b(0x80);
