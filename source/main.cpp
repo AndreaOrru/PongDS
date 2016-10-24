@@ -6,7 +6,7 @@
 void vblank()
 {
     // Call the SNES VBlank handler:
-    nmi_008199();
+    snes_vblank();
 }
 
 int main()
@@ -19,7 +19,7 @@ int main()
     iprintf("\n\n\n\n\n\n\n\n\n\n\n         Never Graduate!");
 
     // Start the SNES game loop:
-    reset_008000();
+    snes_reset();
 
     return 0;
 }

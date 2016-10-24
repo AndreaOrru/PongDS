@@ -9,11 +9,11 @@ Flags P;
 uint8_t mem[0x20000];
 
 
-void reset_008000()
+void snes_reset()
 {
-reset_008000:
+snes_reset:
     // SEI();
-    sub_00822B();
+    // snes_init();
 
     // REP_imm(0x30);
     STZ_w(OAMADDL);
@@ -237,9 +237,9 @@ loc_00818F:
     goto loc_0080FE;
 }
 
-void nmi_008199()
+void snes_vblank()
 {
-nmi_008199:
+snes_vblank:
     PHA_b();
     PHX_w();
     LDA_imm_b(0x80);
@@ -318,9 +318,9 @@ loc_008228:
     return;
 }
 
-void sub_00822B()
+/*void snes_init()
 {
-sub_00822B:
+snes_init:
     CLC();
     // XCE();
     // REP_imm(0x30);
@@ -392,4 +392,4 @@ loc_008239:
     STZ_b(HDMAEN);
     STZ_b(MEMSEL);
     return;
-}
+}*/

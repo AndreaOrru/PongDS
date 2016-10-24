@@ -2,9 +2,9 @@
 #define __PONG_HPP
 
 
-void reset_008000();
-void nmi_008199();
-void sub_00822B();
+void snes_reset();
+void snes_vblank();
+// void snes_init();
 
 
 #endif
