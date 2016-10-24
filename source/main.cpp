@@ -1,13 +1,25 @@
 #include <nds.h>
 #include <stdio.h>
+#include "pong.hpp"
 
 
-int main(void)
+void vblank()
 {
-	consoleDemoInit();
+    // Call the SNES VBlank handler:
+    nmi_008199();
+}
 
-  iprintf("Hello World!");
+int main()
+{
+    // Setup VBlank handler:
+    irqSet(IRQ_VBLANK, vblank);
 
-  while(true)
-		swiWaitForVBlank();
+    // RC swag:
+    consoleDemoInit();
+    iprintf("\n\n\n\n\n\n\n\n\n\n\n         Never Graduate!");
+
+    // Start the SNES game loop:
+    reset_008000();
+
+    return 0;
 }
