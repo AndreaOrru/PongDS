@@ -12,12 +12,8 @@ uint8_t mem[0x20000];
 void snes_reset()
 {
 snes_reset:
-    // SEI();
-    // snes_init();
-
-    // REP_imm(0x30);
+    /*** Initialize sprite attributes. ***/
     STZ_w(OAMADDL);
-    // SEP_imm(0x30);
     LDX_imm_b(0x80);
 
 loc_00800D:
@@ -38,8 +34,7 @@ loc_008024:
     DEC_b(X.l);
     BNE(loc_008024);
 
-    // REP_imm(0x30);
-    // SEP_imm(0x20);
+    /*** Copy palettes. ***/
     STZ_b(CGADD);
     LDX_imm_w(0x2200);
     STX_w(DMAP0);
@@ -50,7 +45,9 @@ loc_008024:
     LDX_imm_w(0x0200);
     STX_w(DAS0);
     LDA_imm_b(0x01);
-    STA_b(MDMAEN);  // DMA: $0082E6 -> CGRAM (512 bytes)
+    STA_b(MDMAEN);     // DMA: $0082E6 -> CGRAM (512 bytes)
+
+    /*** Copy background tile map. ***/
     LDA_imm_b(0x80);
     STA_b(VMAIN);
     LDX_imm_w(0x0000);
@@ -64,7 +61,9 @@ loc_008024:
     LDX_imm_w(0x0800);
     STX_w(DAS0);
     LDA_imm_b(0x01);
-    STA_b(MDMAEN);  // DMA: $0087A6 -> VRAM (2048 bytes)
+    STA_b(MDMAEN);     // DMA: $0087A6 -> VRAM (2048 bytes)
+
+    /*** Copy background tiles. ***/
     LDA_imm_b(0x80);
     STA_b(VMAIN);
     LDX_imm_w(0x1000);
@@ -78,7 +77,9 @@ loc_008024:
     LDX_imm_w(0x02c0);
     STX_w(DAS0);
     LDA_imm_b(0x01);
-    STA_b(MDMAEN);  // DMA: $0084E6 -> VRAM (704 bytes)
+    STA_b(MDMAEN);     // DMA: $0084E6 -> VRAM (704 bytes)
+
+    /*** Copy sprite tiles. ***/
     LDA_imm_b(0x80);
     STA_b(VMAIN);
     LDX_imm_w(0x4000);
@@ -92,17 +93,29 @@ loc_008024:
     LDX_imm_w(0x0680);
     STX_w(DAS0);
     LDA_imm_b(0x01);
-    STA_b(MDMAEN);  // DMA: $008FA6 -> VRAM (1664 bytes)
+    STA_b(MDMAEN);     // DMA: $008FA6 -> VRAM (1664 bytes)
+
+    /* Sprite tile base: $8000              *
+     * Sprite sizes: 8x8 small, 32x32 large */
     LDA_imm_b(0x22);
     STA_b(OBSEL);
+
+    // BG Mode 1, tile size 16x16:
     LDA_imm_b(0x11);
     STA_b(BGMODE);
+
+    // 32x32 tilemap, starting at $0000:
     LDA_imm_b(0x00);
     STA_b(BG1SC);
+
+    // Background tile base at $2000:
     LDA_imm_b(0x01);
     STA_b(BG12NBA);
+
+    // Enable BG1 and Sprites on Main Screen:
     LDA_imm_b(0x11);
     STA_b(TM);
+
     STZ_b(D + 0x0c);
     LDA_imm_b(0x05);
     STA_b(D + 0x04);
@@ -115,11 +128,15 @@ loc_008024:
     LDA_imm_b(0x02);
     STA_b(D + 0x03);
     STA_b(D + 0x02);
+
+    // Maximum brightness:
     LDA_imm_b(0x0f);
     STA_b(INIDISP);
+
+    // Enable NMI and Joypad:
     LDA_imm_b(0x81);
     STA_b(NMITIMEN);
-    // CLI();
+    // TODO: Enable interrupts here.
 
 loc_0080FE:
     LDA_b(D + 0x0c);
@@ -317,79 +334,3 @@ loc_008228:
     PLA_b();
     return;
 }
-
-/*void snes_init()
-{
-snes_init:
-    CLC();
-    // XCE();
-    // REP_imm(0x30);
-    // SEP_imm(0x20);
-    LDA_imm_b(0x8f);
-    STA_b(INIDISP);
-    LDX_imm_w(0x0001);
-
-loc_008239:
-    STZ_b(B + 0x2100 + X);
-    INC_w(X.w);
-    CPX_imm_w(0x0015);
-    BNE(loc_008239);
-
-    LDA_imm_b(0x80);
-    STA_b(VMAIN);
-    STZ_b(VMADDL);
-    STZ_b(VMADDH);
-    STZ_b(VMDATAL);
-    STZ_b(VMDATAH);
-    STZ_b(M7SEL);
-    STZ_b(M7A);
-    LDA_imm_b(0x01);
-    STA_b(M7A);
-    STZ_b(M7B);
-    STZ_b(M7B);
-    STZ_b(M7C);
-    STZ_b(M7C);
-    STZ_b(M7D);
-    STA_b(M7D);
-    STZ_b(M7X);
-    STZ_b(M7X);
-    STZ_b(M7Y);
-    STZ_b(M7Y);
-    STZ_b(CGADD);
-    STZ_b(CGDATA);
-    STZ_b(CGDATA);
-    STZ_b(W12SEL);
-    STZ_b(W34SEL);
-    STZ_b(WOBJSEL);
-    STZ_b(WH0);
-    STZ_b(WH1);
-    STZ_b(WH2);
-    STZ_b(WH3);
-    STZ_b(WBGLOG);
-    STZ_b(WOBJLOG);
-    STZ_b(TM);
-    STZ_b(TS);
-    STZ_b(TMW);
-    LDA_imm_b(0x30);
-    STA_b(CGWSEL);
-    STZ_b(CGADSUB);
-    LDA_imm_b(0xe0);
-    STA_b(COLDATA);
-    STZ_b(SETINI);
-    STZ_b(NMITIMEN);
-    LDA_imm_b(0xff);
-    STA_b(WRIO);
-    STZ_b(WRMPYA);
-    STZ_b(WRMPYB);
-    STZ_b(WRDIVL);
-    STZ_b(WRDIVH);
-    STZ_b(WRDIVB);
-    STZ_b(HTIMEL);
-    STZ_b(HTIMEH);
-    STZ_b(VTIMEL);
-    STZ_b(VTIMEH);
-    STZ_b(MDMAEN);
-    STZ_b(HDMAEN);
-    STZ_b(MEMSEL);
-    return;
-}*/

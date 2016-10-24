@@ -4,7 +4,6 @@
 
 void snes_reset();
 void snes_vblank();
-// void snes_init();
 
 
 #endif
