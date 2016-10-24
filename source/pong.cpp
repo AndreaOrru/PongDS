@@ -1,3 +1,4 @@
+#include <nds.h>
 #include "snes.hpp"
 #include "w65816.hpp"
 #include "pong.hpp"
@@ -35,6 +36,7 @@ loc_008024:
     BNE(loc_008024);
 
     /*** Copy palettes. ***/
+    /*
     STZ_b(CGADD);
     LDX_imm_w(0x2200);
     STX_w(DMAP0);
@@ -45,7 +47,10 @@ loc_008024:
     LDX_imm_w(0x0200);
     STX_w(DAS0);
     LDA_imm_b(0x01);
-    STA_b(MDMAEN);     // DMA: $0082E6 -> CGRAM (512 bytes)
+    STA_b(MDMAEN);     // DMA: $0082E6 -> CGRAM ($200 bytes)
+    */
+    dmaCopy(palette, BG_PALETTE, sizeof(palette));
+    dmaCopy(palette, SPRITE_PALETTE, sizeof(palette));
 
     /*** Copy background tile map. ***/
     LDA_imm_b(0x80);
@@ -61,7 +66,7 @@ loc_008024:
     LDX_imm_w(0x0800);
     STX_w(DAS0);
     LDA_imm_b(0x01);
-    STA_b(MDMAEN);     // DMA: $0087A6 -> VRAM (2048 bytes)
+    STA_b(MDMAEN);     // DMA: $0087A6 -> VRAM ($800 bytes)
 
     /*** Copy background tiles. ***/
     LDA_imm_b(0x80);
@@ -77,7 +82,7 @@ loc_008024:
     LDX_imm_w(0x02c0);
     STX_w(DAS0);
     LDA_imm_b(0x01);
-    STA_b(MDMAEN);     // DMA: $0084E6 -> VRAM (704 bytes)
+    STA_b(MDMAEN);     // DMA: $0084E6 -> VRAM ($2C0 bytes)
 
     /*** Copy sprite tiles. ***/
     LDA_imm_b(0x80);
@@ -93,7 +98,7 @@ loc_008024:
     LDX_imm_w(0x0680);
     STX_w(DAS0);
     LDA_imm_b(0x01);
-    STA_b(MDMAEN);     // DMA: $008FA6 -> VRAM (1664 bytes)
+    STA_b(MDMAEN);     // DMA: $008FA6 -> VRAM ($680 bytes)
 
     /* Sprite tile base: $8000              *
      * Sprite sizes: 8x8 small, 32x32 large */
