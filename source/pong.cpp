@@ -2,6 +2,7 @@
 #include "snes.hpp"
 #include "w65816.hpp"
 #include "pong.hpp"
+#include <stdio.h>
 
 
 Register A, X, Y, S, D;
@@ -15,11 +16,12 @@ void snes_reset()
 snes_reset:
     // Initialize DS graphics mode:
     videoSetMode(MODE_0_2D);
-    vramSetBankA(VRAM_A_MAIN_BG);
+    vramSetBankA(VRAM_A_MAIN_BG_0x06000000);
+    vramSetBankB(VRAM_B_MAIN_SPRITE_0x06400000);
     int bg = bgInit(0, BgType_Text4bpp, BgSize_T_256x256, 0, 1);
 
     /*** Initialize sprite attributes. ***/
-    STZ_w(OAMADDL);
+    /*STZ_w(OAMADDL);
     LDX_imm_b(0x80);
 
 loc_00800D:
@@ -34,12 +36,13 @@ loc_00800D:
 
     LDX_imm_b(0x20);
     LDA_imm_b(0x55);
-    /*************************************/
 
 loc_008024:
     STA_b(OAMDATA);
     DEC_b(X.l);
-    BNE(loc_008024);
+    BNE(loc_008024);*/
+    /*************************************/
+    oamInit(&oamMain, SpriteMapping_1D_32, false);
 
     /*** Copy palettes. ***/
     /*
@@ -59,7 +62,7 @@ loc_008024:
     dmaCopy(palette, SPRITE_PALETTE, sizeof(palette));
 
     /*** Copy background tile map. ***/
-    LDA_imm_b(0x80);
+    /*LDA_imm_b(0x80);
     STA_b(VMAIN);
     LDX_imm_w(0x0000);
     STX_w(VMADDL);
@@ -72,7 +75,7 @@ loc_008024:
     LDX_imm_w(0x0800);
     STX_w(DAS0);
     LDA_imm_b(0x01);
-    STA_b(MDMAEN);     // DMA: $0087A6 -> VRAM ($800 bytes)
+    STA_b(MDMAEN);     // DMA: $0087A6 -> VRAM ($800 bytes)*/
     dmaCopy(map, bgGetMapPtr(bg), sizeof(map));
 
     /*** Copy background tiles. ***/
@@ -93,7 +96,7 @@ loc_008024:
     dmaCopy(tiles, bgGetGfxPtr(bg), sizeof(tiles));
 
     /*** Copy sprite tiles. ***/
-    LDA_imm_b(0x80);
+    /*LDA_imm_b(0x80);
     STA_b(VMAIN);
     LDX_imm_w(0x4000);
     STX_w(VMADDL);
@@ -106,7 +109,30 @@ loc_008024:
     LDX_imm_w(0x0680);
     STX_w(DAS0);
     LDA_imm_b(0x01);
-    STA_b(MDMAEN);     // DMA: $008FA6 -> VRAM ($680 bytes)
+    STA_b(MDMAEN);     // DMA: $008FA6 -> VRAM ($680 bytes)*/
+    uint16_t* sprites[52];
+    for(int i = 0; i < 52; i++)
+    {
+        sprites[i] = oamAllocateGfx(&oamMain, SpriteSize_8x8,
+                                    SpriteColorFormat_16Color);
+        dmaCopy(&((uint8_t*)spriteTiles)[i*32], sprites[i], 32);
+        oamSet(&oamMain, //main graphics engine context
+               i,           //oam index (0 to 127)
+               (i*8), 0,   //x and y pixle location of the sprite
+               0,                    //priority, lower renders last (on top)
+               0,					  //this is the palette index if multiple palettes or the alpha value if bmp sprite
+               SpriteSize_8x8,
+               SpriteColorFormat_16Color,
+               sprites[i],                  //pointer to the loaded graphics
+               -1,                  //sprite rotation data
+               false,               //double the size when rotating?
+               false,			//hide the sprite?
+               false, false, //vflip, hflip
+               false	//apply mosaic
+            );
+    }
+    swiWaitForVBlank();
+    oamUpdate(&oamMain);
 
     /* Sprite tile base: $8000              *
      * Sprite sizes: 8x8 small, 32x32 large */

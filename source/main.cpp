@@ -12,7 +12,7 @@ void vblank()
 int main()
 {
     // Setup VBlank handler:
-    irqSet(IRQ_VBLANK, vblank);
+    //irqSet(IRQ_VBLANK, vblank);
 
     // RC swag:
     consoleDemoInit();
