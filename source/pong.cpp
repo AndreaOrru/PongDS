@@ -73,6 +73,7 @@ loc_008024:
     STX_w(DAS0);
     LDA_imm_b(0x01);
     STA_b(MDMAEN);     // DMA: $0087A6 -> VRAM ($800 bytes)
+    dmaCopy(map, bgGetMapPtr(bg), sizeof(map));
 
     /*** Copy background tiles. ***/
     /*LDA_imm_b(0x80);
