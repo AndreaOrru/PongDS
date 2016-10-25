@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 
-Register A, X, Y, S, D;
+Register A, X, Y, S(0x100), D;
 uint32_t B = 0;
 Flags P;
 uint8_t mem[0x20000];
@@ -116,27 +116,11 @@ loc_008024:
         sprites[i] = oamAllocateGfx(&oamMain, SpriteSize_8x8,
                                     SpriteColorFormat_16Color);
         dmaCopy(&((uint8_t*)spriteTiles)[i*32], sprites[i], 32);
-        oamSet(&oamMain, //main graphics engine context
-               i,           //oam index (0 to 127)
-               (i*8), 0,   //x and y pixle location of the sprite
-               0,                    //priority, lower renders last (on top)
-               0,					  //this is the palette index if multiple palettes or the alpha value if bmp sprite
-               SpriteSize_8x8,
-               SpriteColorFormat_16Color,
-               sprites[i],                  //pointer to the loaded graphics
-               -1,                  //sprite rotation data
-               false,               //double the size when rotating?
-               false,			//hide the sprite?
-               false, false, //vflip, hflip
-               false	//apply mosaic
-            );
     }
-    swiWaitForVBlank();
-    oamUpdate(&oamMain);
 
     /* Sprite tile base: $8000              *
      * Sprite sizes: 8x8 small, 32x32 large */
-    LDA_imm_b(0x22);
+    /*LDA_imm_b(0x22);
     STA_b(OBSEL);
 
     // BG Mode 1, tile size 16x16:
@@ -153,8 +137,9 @@ loc_008024:
 
     // Enable BG1 and Sprites on Main Screen:
     LDA_imm_b(0x11);
-    STA_b(TM);
+    STA_b(TM);*/
 
+    // In-game variables:
     STZ_b(D + 0x0c);
     LDA_imm_b(0x05);
     STA_b(D + 0x04);
@@ -168,48 +153,54 @@ loc_008024:
     STA_b(D + 0x03);
     STA_b(D + 0x02);
 
+    mem[5] = 0x55;
+    mem[7] = 0x55;
+
     // Maximum brightness:
-    LDA_imm_b(0x0f);
-    STA_b(INIDISP);
+    /*LDA_imm_b(0x0f);
+      STA_b(INIDISP);*/
 
     // Enable NMI and Joypad:
-    LDA_imm_b(0x81);
-    STA_b(NMITIMEN);
-    // TODO: Enable interrupts here.
+    /*LDA_imm_b(0x81);
+      STA_b(NMITIMEN);*/
+
+    // Enable interrupts here:
+    irqSet(IRQ_VBLANK, snes_vblank);
+    swiWaitForVBlank();
 
 loc_0080FE:
-    LDA_b(D + 0x0c);
-    CMP_imm_b(0x00);
-    BEQ(loc_0080FE);
+    //LDA_b(D + 0x0c);
+    //CMP_imm_b(0x00);
+    //BEQ(loc_0080FE);
 
     LDA_b(D + 0x09);
     BIT_imm_b(0x04);
     BEQ(loc_00810E);
 
-    INC_b(A.l);
-    INC_b(A.l);
+    INC_b(D + 0x05);
+    INC_b(D + 0x05);
 
 loc_00810E:
     BIT_imm_b(0x08);
     BEQ(loc_008116);
 
-    DEC_b(A.l);
-    DEC_b(A.l);
+    DEC_b(D + 0x05);
+    DEC_b(D + 0x05);
 
 loc_008116:
     LDA_b(D + 0x0b);
     BIT_imm_b(0x04);
     BEQ(loc_008120);
 
-    INC_b(A.l);
-    INC_b(A.l);
+    INC_b(D + 0x07);
+    INC_b(D + 0x07);
 
 loc_008120:
     BIT_imm_b(0x08);
     BEQ(loc_008128);
 
-    DEC_b(A.l);
-    DEC_b(A.l);
+    DEC_b(D + 0x07);
+    DEC_b(D + 0x07);
 
 loc_008128:
     CLC();
@@ -281,14 +272,16 @@ loc_00817D:
     STA_b(D + 0x03);
 
 loc_008188:
-    LDA_b(HVBJOY);
+    /*LDA_b(HVBJOY);
     AND_imm_b(0x80);
-    BNE(loc_008188);
+    BNE(loc_008188);*/
 
 loc_00818F:
-    LDA_b(HVBJOY);
+    /*LDA_b(HVBJOY);
     AND_imm_b(0x80);
-    BEQ(loc_00818F);
+    BEQ(loc_00818F);*/
+    swiWaitForVBlank();
+    swiWaitForVBlank();
 
     goto loc_0080FE;
 }
@@ -298,57 +291,140 @@ void snes_vblank()
 snes_vblank:
     PHA_b();
     PHX_w();
-    LDA_imm_b(0x80);
-    AND_b(RDNMI);
+
+    // Some VBlank specific stuff:
+    /*LDA_imm_b(0x80);
+      AND_b(RDNMI);*/
+
+    // Start writing from the beginning of OAM:
     STZ_b(OAMADDL);
     STZ_b(OAMADDH);
+
     LDA_b(D + 0x00);
     STA_b(OAMDATA);
+    int x = A.l;
     LDA_b(D + 0x01);
     STA_b(OAMDATA);
+    int y = A.l;
     LDA_imm_b(0x08);
     STA_b(OAMDATA);
+    int i = A.l;
     LDA_imm_b(0x38);
     STA_b(OAMDATA);
+
+    oamSet(&oamMain, //main graphics engine context
+           0,           //oam index (0 to 127)
+           x, y,   //x and y pixle location of the sprite
+           0,                    //priority, lower renders last (on top)
+           0,					  //this is the palette index if multiple palettes or the alpha value if bmp sprite
+           SpriteSize_8x8,
+           SpriteColorFormat_16Color,
+           oamGetGfxPtr(&oamMain, i), //pointer to the loaded graphics
+           -1,                  //sprite rotation data
+           false,               //double the size when rotating?
+           false,			//hide the sprite?
+           false, false, //vflip, hflip
+           false	//apply mosaic
+        );
+
     LDA_b(D + 0x04);
     STA_b(OAMDATA);
+    x = A.l;
     LDA_b(D + 0x05);
     STA_b(OAMDATA);
+    y = A.l;
     LDA_imm_b(0x00);
     STA_b(OAMDATA);
+    i = A.l;
     LDA_imm_b(0x38);
     STA_b(OAMDATA);
+    for (int j = 0; j < 4; j++) {
+    oamSet(&oamMain, //main graphics engine context
+           1 + j,           //oam index (0 to 127)
+           x+8, y + j*8,   //x and y pixle location of the sprite
+           0,                    //priority, lower renders last (on top)
+           0,					  //this is the palette index if multiple palettes or the alpha value if bmp sprite
+           SpriteSize_8x8,
+           SpriteColorFormat_16Color,
+           oamGetGfxPtr(&oamMain, i+1 + j*16), //pointer to the loaded graphics
+           -1,                  //sprite rotation data
+           false,               //double the size when rotating?
+           false,			//hide the sprite?
+           false, false, //vflip, hflip
+           false	//apply mosaic
+        );
+    }
+
     LDA_b(D + 0x06);
     STA_b(OAMDATA);
+    x = A.l;
     LDA_b(D + 0x07);
     STA_b(OAMDATA);
+    y = A.l;
     LDA_imm_b(0x00);
     STA_b(OAMDATA);
+    i = A.l;
     LDA_imm_b(0x38);
     STA_b(OAMDATA);
-    STZ_b(OAMADDL);
+    for (int j = 0; j < 4; j++) {
+        oamSet(&oamMain, //main graphics engine context
+               10 + j,           //oam index (0 to 127)
+               x+8, y + j*8,   //x and y pixle location of the sprite
+               0,                    //priority, lower renders last (on top)
+               0,					  //this is the palette index if multiple palettes or the alpha value if bmp sprite
+               SpriteSize_8x8,
+               SpriteColorFormat_16Color,
+               oamGetGfxPtr(&oamMain, i+1 + j*16), //pointer to the loaded graphics
+               -1,                  //sprite rotation data
+               false,               //double the size when rotating?
+               false,			//hide the sprite?
+               false, false, //vflip, hflip
+               false	//apply mosaic
+            );
+    }
+    oamUpdate(&oamMain);
+
+    /*STZ_b(OAMADDL);
     LDA_imm_b(0x01);
     STA_b(OAMADDH);
+
     LDA_imm_b(0x68);
     STA_b(OAMDATA);
     LDA_imm_b(0x55);
     STA_b(OAMDATA);
-    BEQ(loc_0081F6);
+    BEQ(loc_0081F6);*/
 
 loc_0081F6:
-    LDA_b(HVBJOY);
-    AND_imm_b(0x01);
-    BEQ(loc_0081F6);
+    //LDA_b(HVBJOY);
+    //AND_imm_b(0x01);
+    //BEQ(loc_0081F6);
 
 loc_0081FD:
-    LDA_b(HVBJOY);
-    AND_imm_b(0x01);
-    BNE(loc_0081FD);
+    //LDA_b(HVBJOY);
+    //AND_imm_b(0x01);
+    //BNE(loc_0081FD);
+    scanKeys();
+    uint16_t keys = keysHeld();
 
-    LDX_w(JOY1L);
+    X.w = 0;
+    if (keys & KEY_UP) {
+        X.w |= (1 << 11);
+    } else if (keys & KEY_DOWN) {
+        X.w |= (1 << 10);
+    }
+
+    //LDX_w(JOY1L);
     STX_w(D + 0x08);
-    LDX_w(JOY2L);
+    //LDX_w(JOY2L);
+
+    X.w = 0;
+    if (keys & KEY_X) {
+        X.w |= (1 << 11);
+    } else if (keys & KEY_B) {
+        X.w |= (1 << 10);
+    }
     STX_w(D + 0x0a);
+
     LDA_b(D + 0x09);
     BIT_imm_b(0x10);
     BEQ(loc_00821B);
