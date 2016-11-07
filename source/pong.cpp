@@ -1,8 +1,9 @@
 #include <nds.h>
-#include "snes.hpp"
-#include "w65816.hpp"
 #include "pong.hpp"
-#include <stdio.h>
+#include "rom_bin.h"
+#include "w65816.hpp"
+#include "snes.hpp"
+#include "ds.hpp"
 
 
 Register A, X, Y, S(0x100), D;
@@ -58,8 +59,8 @@ loc_008024:
     LDA_imm_b(0x01);
     STA_b(MDMAEN);     // DMA: $0082E6 -> CGRAM ($200 bytes)
     */
-    dmaCopy(palette, BG_PALETTE, sizeof(palette));
-    dmaCopy(palette, SPRITE_PALETTE, sizeof(palette));
+    dmaCopy(&rom_bin[0x2E6], BG_PALETTE, 200);
+    dmaCopy(&rom_bin[0x2E6], SPRITE_PALETTE, 200);
 
     /*** Copy background tile map. ***/
     /*LDA_imm_b(0x80);
@@ -76,7 +77,9 @@ loc_008024:
     STX_w(DAS0);
     LDA_imm_b(0x01);
     STA_b(MDMAEN);     // DMA: $0087A6 -> VRAM ($800 bytes)*/
-    dmaCopy(map, bgGetMapPtr(bg), sizeof(map));
+    MapEntry* map = convertMap((MapEntry*) &rom_bin[0x7A6], 0x800);
+    dmaCopy(map, bgGetMapPtr(bg), 0x800);
+    delete map;
 
     /*** Copy background tiles. ***/
     /*LDA_imm_b(0x80);
@@ -93,7 +96,9 @@ loc_008024:
     STX_w(DAS0);
     LDA_imm_b(0x01);
     STA_b(MDMAEN);     // DMA: $0084E6 -> VRAM ($2C0 bytes)*/
-    dmaCopy(tiles, bgGetGfxPtr(bg), sizeof(tiles));
+    uint32_t* tiles = convertTiles(&rom_bin[0x4E6], 0x2C0);
+    dmaCopy(tiles, bgGetGfxPtr(bg), 0x2C0);
+    delete tiles;
 
     /*** Copy sprite tiles. ***/
     /*LDA_imm_b(0x80);
@@ -115,7 +120,10 @@ loc_008024:
     {
         sprites[i] = oamAllocateGfx(&oamMain, SpriteSize_8x8,
                                     SpriteColorFormat_16Color);
-        dmaCopy(&((uint8_t*)spriteTiles)[i*32], sprites[i], 32);
+
+        uint32_t* sprite = convertTiles(&rom_bin[0xFA6 + i*32], 32);
+        dmaCopy(sprite, sprites[i], 32);
+        delete sprite;
     }
 
     /* Sprite tile base: $8000              *

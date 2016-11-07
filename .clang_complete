@@ -6,6 +6,7 @@
 
 -DARM9
 
+-I./build
 -I./include
 -I/opt/devkitpro/libnds/include
 -I/opt/devkitpro/devkitARM/arm-none-eabi/include
